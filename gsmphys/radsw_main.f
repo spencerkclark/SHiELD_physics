@@ -490,7 +490,6 @@
       logical :: lfdncmp= .false.
       logical :: ltau067  = .false.
 
-
 !> those data will be set up only once by "rswinit"
       real (kind=kind_phys) :: exp_tbl(0:NTBMX)
 
@@ -856,7 +855,8 @@
       lfdncmp= present ( fdncmp )
       ltau067  = present ( tau067 )
 
-!> -# Compute solar constant adjustment factor (s0fac) according to solcon.
+!     > -# Compute solar constant adjustment factor (s0fac) according to
+!     solcon.
 !      ***  s0, the solar constant at toa in w/m**2, is hard-coded with
 !           each spectra band, the total flux is about 1368.22 w/m**2.
 
@@ -916,7 +916,8 @@
         cosz1  = cosz(j1)
         sntz1  = f_one / cosz(j1)
         ssolar = s0fac * cosz(j1)
-
+        if (iovrsw == 3) delgth = de_lgth(j1) ! clouds decorr-length
+        
 !> -# Prepare surface albedo: bm,df - dir,dif; 1,2 - nir,uvv.
         albbm(1) = sfcalb(j1,1)
         albdf(1) = sfcalb(j1,2)
@@ -2084,51 +2085,51 @@
             enddo
           enddo
 
-        case( 3 )        ! decorrelation length overlap
-
-          !  ---  compute overlapping factors based on layer midpoint distances
-          !       and decorrelation depths
+       case( 3 )        ! decorrelation length overlap
+         !  ---  compute overlapping factors based on layer midpoint distances
+         !       and decorrelation depths
           
-                    do k = nlay, 2, -1
-                      fac_lcf(k) = exp( -0.5 * (dz(k)+dz(k-1)) / de_lgth )
-                    enddo
+         do k = nlay, 2, -1
+           fac_lcf(k) = exp( -0.5 * (dz(k)+dz(k-1)) / de_lgth )
+         enddo
           
-          !  ---  setup 2 sets of random numbers
+         !  ---  setup 2 sets of random numbers
           
-                    call random_number ( rand2d, stat )
+         call random_number ( rand2d, stat )
           
-                    k1 = 0
-                    do n = 1, ngptsw
-                      do k = 1, nlay
-                        k1 = k1 + 1
-                        cdfunc(k,n) = rand2d(k1)
-                      enddo
-                    enddo
+         k1 = 0
+         do n = 1, ngptsw
+            do k = 1, nlay
+               k1 = k1 + 1
+               cdfunc(k,n) = rand2d(k1)
+            enddo
+         enddo
+         
+         call random_number ( rand2d, stat )
+         
+         k1 = 0
+         do n = 1, ngptsw
+            do k = 1, nlay
+               k1 = k1 + 1
+               cdfun2(k,n) = rand2d(k1)
+            enddo
+         enddo
           
-                    call random_number ( rand2d, stat )
+         !  ---  then working from the top down:
+         !       if a random number (from an independent set -cdfun2) is smaller
+         !     then the
+         !       scale factor: use the upper layer's number,  otherwise use a new random
+         !       number (keep the original assigned one).
+         
+         do n = 1, ngptsw
+            do k = nlay-1, 1, -1
+               k1 = k + 1
+               if ( cdfun2(k,n) <= fac_lcf(k1) ) then
+                  cdfunc(k,n) = cdfunc(k1,n)
+               endif
+            enddo
+         enddo
           
-                    k1 = 0
-                    do n = 1, ngptsw
-                      do k = 1, nlay
-                        k1 = k1 + 1
-                        cdfun2(k,n) = rand2d(k1)
-                      enddo
-                    enddo
-          
-          !  ---  then working from the top down:
-          !       if a random number (from an independent set -cdfun2) is smaller then the
-          !       scale factor: use the upper layer's number,  otherwise use a new random
-          !       number (keep the original assigned one).
-          
-                    do n = 1, ngptsw
-                      do k = nlay-1, 1, -1
-                        k1 = k + 1
-                        if ( cdfun2(k,n) <= fac_lcf(k1) ) then
-                             cdfunc(k,n) = cdfunc(k1,n)
-                        endif
-                      enddo
-                    enddo
-
       end select
 
 !  --- ...  generate subcolumns for homogeneous clouds

@@ -455,7 +455,7 @@
       subroutine lwrad                                                  &
      &     ( plyr,plvl,tlyr,tlvl,qlyr,olyr,gasvmr,                      &   !  ---  inputs
      &       clouds,icseed,aerosols,sfemis,sfgtmp,                      &
-     &       dzlyr,delpin,de_lgth,                                      &
+     &       dzlyr,delpin,de_lgth,                                      & 
      &       npts, nlay, nlp1, lprnt,                                   &
      &       hlwc,topflx,sfcflx,                                        &    !  ---  outputs
      &       HLW0,HLWB,FLXPRF,tau110                                    &   !! ---  optional
@@ -706,7 +706,8 @@
 !       (:,m,:) m = 1-h2o/co2, 2-h2o/o3, 3-h2o/n2o, 4-h2o/ch4, 5-n2o/co2, 6-o3/co2
       real (kind=kind_phys) :: rfrate(nlay,nrates,2)
 
-      real (kind=kind_phys) :: tem0, tem1, tem2, pwvcm, summol, stemp
+      real (kind=kind_phys) :: tem0, tem1, tem2, pwvcm, summol, stemp,  &
+     &                         delgth
 
       integer, dimension(npts) :: ipseed
       integer, dimension(nlay) :: jp, jt, jt1, indself, indfor, indminor
@@ -723,7 +724,7 @@
       lhlw0  = present ( hlw0 )
       lflxprf= present ( flxprf )
       ltau110= present ( tau110 )
- 
+
 
       if ( ltau110 ) then
         tau110(:,:) = f_zero
@@ -765,7 +766,8 @@
         endif
 
         stemp = sfgtmp(iplon)          ! surface ground temp
-
+        if (iovrlw == 3) delgth= de_lgth(iplon)    ! clouds decorr-length
+        
 !> -# Prepare atmospheric profile for use in rrtm.
 !           the vertical index of internal array is from surface to top
 
@@ -1956,7 +1958,7 @@
             enddo
           enddo
 
-        case( 3 )        ! decorrelation length overlap
+       case( 3 )        ! decorrelation length overlap
 
 !  ---  compute overlapping factors based on layer midpoint distances
 !       and decorrelation depths
@@ -1991,10 +1993,8 @@
 !       if a random number (from an independent set -cdfun2) is smaller then the
 !       scale factor: use the upper layer's number,  otherwise use a new random
 !       number (keep the original assigned one).
-
           do k = nlay-1, 1, -1
             k1 = k + 1
-
             do n = 1, ngptlw
               if ( cdfun2(n,k) <= fac_lcf(k1) ) then
                 cdfunc(n,k) = cdfunc(n,k1)
