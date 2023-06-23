@@ -469,6 +469,7 @@
 !!               -pi/2 range, otherwise see in-line comment
 !!\param xlon    (IX), grid longitude in radians  (not used)
 !!\param slmsk   (IX), sea/land mask array (sea:0,land:1,sea-ice:2)
+!!\param dz      (IX,NLAY), layer thickness (km)
 !!\param IX           horizontal dimention
 !!\param NLAY,NLP1    vertical layer/level dimensions
 !!\param clouds      (IX,NLAY,NF_CLDS), cloud profiles
@@ -943,6 +944,7 @@
 !!               -pi/2 range, otherwise see in-line comment
 !!\param xlon    (IX), grid longitude in radians  (not used)
 !!\param slmsk   (IX), sea/land mask array (sea:0,land:1,sea-ice:2)
+!!\param dz      (IX,NLAY), layer thickness (km)
 !!\param IX      horizontal dimention
 !!\param NLAY,NLP1    vertical layer/level dimensions
 !!\param clouds      (IX,NLAY,NF_CLDS), cloud profiles
@@ -959,6 +961,7 @@
 !!\param clds  (IX,5), fraction of clouds for low, mid, hi, tot, bl
 !!\param mtop  (IX,3), vertical indices for low, mid, hi cloud tops
 !!\param mbot  (IX,3), vertical indices for low, mid, hi cloud bases
+!!\param de_lgth    (IX),   clouds decorrelation length (km)
 !>\section gen_progcld2 General Algorithm
 !> @{
 !-----------------------------------
@@ -2664,7 +2667,7 @@
 #else
 #ifdef GFS_CLOUD_OVERLAP
       call cld_eff_rad (1, IX, 1, NLAY, slmsk, plyr*100,                &
-     &                  abs(plvl(:,1:NLAY)-plvl(:,2:NLAY+1))*100, tylr, &
+     &                  abs(plvl(:,1:NLAY)-plvl(:,2:NLAY+1))*100, tlyr, &
      &                  qlyr, qw, qi, qr, qs, qg, qa, cwp, cip, crp,    &
      &                  csp, cgp, rew, rei, rer, res, reg, cldtot,      &
      &                  cldtot, snowd, cnvw=cnvw)
