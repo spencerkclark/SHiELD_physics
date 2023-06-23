@@ -1213,9 +1213,10 @@
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP) :: &
            htswc, htlwc, gcice, grain, grime, htsw0, htlw0, plyr, tlyr,    &
            qlyr, olyr, rhly, tvly,qstl, vvel, clw, ciw, prslk1, tem2da,    &
-           dz,delp,tem2db, cldcov, deltaq, cnvc, cnvw, qa, tau067, tau110
+           dz,delp, cldcov, deltaq, cnvc, cnvw, qa, tau067, tau110
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+1+LTP) :: plvl, tlvl
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+ltp+1) :: tem2db
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP,2:Model%ntrac) :: tracer1
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP,NF_CLDS) :: clouds
@@ -1401,7 +1402,7 @@
             qlyr(i,k1) = max( tem1d(i), Statein%qgrs(i,k,1) )
             tem1d(i)   = min( QME5, qlyr(i,k1) )
             tvly(i,k1) = Statein%tgrs(i,k) * (1.0 + fvirt*qlyr(i,k1)) ! virtual T (K)
-            delp(i,lyb) = plvl(i,lla) - plvl(i,llb)
+            delp(i,k1) = plvl(i,k1+1) - plvl(i,k1)
           enddo
         enddo
 
@@ -1447,7 +1448,7 @@
             qlyr(i,k) = max( tem1d(i), Statein%qgrs(i,k,1) )
             tem1d(i)  = min( QME5, qlyr(i,k) )
             tvly(i,k) = Statein%tgrs(i,k) * (1.0 + fvirt*qlyr(i,k)) ! virtual T (K)
-            delp(i,lyb) = plvl(i,lla) - plvl(i,llb)
+            delp(i,k) = plvl(i,k) - plvl(i,k+1)
           enddo
         enddo
 
