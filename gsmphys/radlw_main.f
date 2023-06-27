@@ -706,7 +706,8 @@
 !       (:,m,:) m = 1-h2o/co2, 2-h2o/o3, 3-h2o/n2o, 4-h2o/ch4, 5-n2o/co2, 6-o3/co2
       real (kind=kind_phys) :: rfrate(nlay,nrates,2)
 
-      real (kind=kind_phys) :: tem0, tem1, tem2, pwvcm, summol, stemp
+      real (kind=kind_phys) :: tem0, tem1, tem2, pwvcm, summol, stemp,  &
+     &            delgth
 
       integer, dimension(npts) :: ipseed
       integer, dimension(nlay) :: jp, jt, jt1, indself, indfor, indminor
@@ -765,6 +766,7 @@
         endif
 
         stemp = sfgtmp(iplon)          ! surface ground temp
+        if (iovrlw == 3) delgth= de_lgth(iplon)    ! clouds decorr-length
 
 !> -# Prepare atmospheric profile for use in rrtm.
 !           the vertical index of internal array is from surface to top
@@ -1359,13 +1361,13 @@
 !
 !===> ... begin here
 !
-      if ( iovrlw<0 .or. iovrlw>2 ) then
+      if ( iovrlw<0 .or. iovrlw>3 ) then
         print *,'  *** Error in specification of cloud overlap flag',   &
      &          ' IOVRLW=',iovrlw,' in RLWINIT !!'
         stop
-      elseif ( iovrlw==2 .and. isubclw==0 ) then
+      elseif ( iovrlw>=2 .and. isubclw==0 ) then
         if (me == 0) then
-          print *,'  *** IOVRLW=2 - maximum cloud overlap, is not yet', &
+          print *,'  *** IOVRLW=', iovrlw, ', is not yet',              &
      &          ' available for ISUBCLW=0 setting!!'
           print *,'      The program uses maximum/random overlap',      &
      &          ' instead.'
@@ -1538,11 +1540,11 @@
 !    cicep - not used                                              nlay !
 !    reice - not used                                              nlay !
 !                                                                       !
-!    dz     - real, layer thickness (km)                           nlay !
-!    de_lgth- real, layer cloud decorrelation length (km)             1 !
 !    nlay  - integer, number of vertical layers                      1  !
 !    nlp1  - integer, number of vertical levels                      1  !
 !    ipseed- permutation seed for generating random numbers (isubclw>0) !
+!    dz     - real, layer thickness (km)                           nlay !
+!    de_lgth- real, layer cloud decorrelation length (km)             1 !
 !                                                                       !
 !  outputs:                                                             !
 !    cldfmc - real, cloud fraction for each sub-column       ngptlw*nlay!
@@ -1956,7 +1958,7 @@
             enddo
           enddo
 
-        case( 3 )        ! decorrelation length overlap
+       case( 3 )        ! decorrelation length overlap
 
 !  ---  compute overlapping factors based on layer midpoint distances
 !       and decorrelation depths

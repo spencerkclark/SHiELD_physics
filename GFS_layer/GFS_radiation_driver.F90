@@ -1204,7 +1204,7 @@
       real(kind=kind_phys) :: raddt, es, qs, delt, tem0d 
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1)) ::             &
-           tsfa, cvt1, cvb1, tem1d, tsfg, tskn
+           tsfa, cvt1, cvb1, tem1d, tsfg, tskn, de_lgth
 
       real(kind=kind_phys), dimension(size(Grid%xlon,1),5)       :: cldsa
       real(kind=kind_phys), dimension(size(Grid%xlon,1),NSPC1)   :: aerodp
@@ -1213,10 +1213,10 @@
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP) :: &
            htswc, htlwc, gcice, grain, grime, htsw0, htlw0, plyr, tlyr,    &
            qlyr, olyr, rhly, tvly,qstl, vvel, clw, ciw, prslk1, tem2da,    &
-           dz,delp,tem2db, cldcov, deltaq, cnvc, cnvw, qa, tau067, tau110
+           dz, delp, cldcov, deltaq, cnvc, cnvw, qa, tau067, tau110
 
-      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+1+LTP) :: plvl, tlvl
-
+      real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+1+LTP) :: plvl, tlvl, tem2db
+      
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP,2:Model%ntrac) :: tracer1
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP,NF_CLDS) :: clouds
       real(kind=kind_phys), dimension(size(Grid%xlon,1),Model%levr+LTP,NF_VGAS) :: gasvmr
@@ -1401,7 +1401,7 @@
             qlyr(i,k1) = max( tem1d(i), Statein%qgrs(i,k,1) )
             tem1d(i)   = min( QME5, qlyr(i,k1) )
             tvly(i,k1) = Statein%tgrs(i,k) * (1.0 + fvirt*qlyr(i,k1)) ! virtual T (K)
-            delp(i,lyb) = plvl(i,lla) - plvl(i,llb)
+            delp(i,k1) = plvl(i,k1+1) - plvl(i,k1)
           enddo
         enddo
 
@@ -1447,7 +1447,7 @@
             qlyr(i,k) = max( tem1d(i), Statein%qgrs(i,k,1) )
             tem1d(i)  = min( QME5, qlyr(i,k) )
             tvly(i,k) = Statein%tgrs(i,k) * (1.0 + fvirt*qlyr(i,k)) ! virtual T (K)
-            delp(i,lyb) = plvl(i,lla) - plvl(i,llb)
+            delp(i,k) = plvl(i,k) - plvl(i,k+1)
           enddo
         enddo
 
@@ -1474,7 +1474,7 @@
           do k = LMK, 1, -1
             dz(i,k) = tem0d * (tem2db(i,k) - tem2db(i,k+1)) * tvly(i,k)
           enddo
-        enddo  
+        enddo
 
       endif                              ! end_if_ivflip
 
@@ -1585,31 +1585,31 @@
           if (Model%uni_cld .and. Model%ncld >= 2) then
             call progclduni (plyr, plvl, tlyr, tvly, clw, ciw,    &    !  ---  inputs
                              Grid%xlat, Grid%xlon, Sfcprop%slmsk, &
-                             IM, LMK, LMP, cldcov(:,1:LMK),       &
-                             clouds, cldsa, mtopa, mbota)              !  ---  outputs
+                             dz, IM, LMK, LMP, cldcov(:,1:LMK),   &
+                             clouds, cldsa, mtopa, mbota, de_lgth)     !  ---  outputs
           else
             call progcld1 (plyr ,plvl, tlyr, tvly, qlyr, qstl,    &    !  ---  inputs
                            rhly, clw, Grid%xlat,Grid%xlon,        &
-                           Sfcprop%slmsk, IM, LMK, LMP,           &
+                           Sfcprop%slmsk, dz, IM, LMK, LMP,       &
                            Model%uni_cld, Model%lmfshal,          &
                            Model%lmfdeep2, cldcov(:,1:LMK),       &
-                           clouds, cldsa, mtopa, mbota)                !  ---  outputs
+                           clouds, cldsa, mtopa, mbota, de_lgth)       !  ---  outputs
           endif
 
         elseif(icmphys == 3) then      ! zhao/moorthi's prognostic cloud+pdfcld
 
           call progcld3 (plyr, plvl, tlyr, tvly, qlyr, qstl, rhly,&    !  ---  inputs
                          clw, cnvw, cnvc, Grid%xlat, Grid%xlon,   &
-                         Sfcprop%slmsk,im, lmk, lmp, deltaq,      &
+                         Sfcprop%slmsk, dz, im, lmk, lmp, deltaq, &
                          Model%sup, Model%kdt, me,                &
-                         clouds, cldsa, mtopa, mbota)                  !  ---  outputs
+                         clouds, cldsa, mtopa, mbota, de_lgth)         !  ---  outputs
 
         elseif (icmphys == 4) then           ! zhao/moorthi's prognostic cloud scheme
 
           call progcld4 (plyr, plvl, tlyr, tvly, qlyr, qstl, rhly,&    !  ---  inputs
                          clw, Grid%xlat, Grid%xlon, Sfcprop%slmsk,&
-                         tracer1(:,1:lmk,Model%ntclamt), im, lmk, &
-                         lmp,                                     &
+                         tracer1(:,1:lmk,Model%ntclamt), dz, im,  &
+                         lmk, lmp,                                &
                          clouds, cldsa, mtopa, mbota, de_lgth)         !  ---  outputs
 
         elseif (icmphys == 5) then           ! zhao/moorthi's prognostic cloud scheme + pdf cloud & cnvc and cnvw
@@ -1618,7 +1618,8 @@
           call progcld5 (plyr, plvl, tlyr, tvly, qlyr, qstl, rhly,&    !  ---  inputs
                          clw, cnvw, cnvc, Grid%xlat, Grid%xlon,   &
                          Sfcprop%slmsk, tracer1(:,1:lmk,Model%ntclamt),&
-                         im, lmk, lmp, clouds, cldsa, mtopa, mbota)    !  ---  outputs
+                         dz, im, lmk, lmp,                        &
+                         clouds, cldsa, mtopa, mbota, de_lgth)         !  ---  outputs
           else
           if (Model%ntal .gt. 0) then
               qa(:,:) = tracer1(:,1:lmk,Model%ntal)
@@ -1631,10 +1632,12 @@
                          tracer1(:,1:lmk,Model%ntrw), &
                          tracer1(:,1:lmk,Model%ntiw), &
                          tracer1(:,1:lmk,Model%ntsw), &
-                         tracer1(:,1:lmk,Model%ntgl), qa, &
+                         tracer1(:,1:lmk,Model%ntgl), &
                          Sfcprop%slmsk, Sfcprop%snowd, &
-                         tracer1(:,1:lmk,Model%ntclamt),&
-                         im, lmk, lmp, clouds, cldsa, mtopa, mbota)    !  ---  outputs
+                         tracer1(:,1:lmk,Model%ntclamt), qa, &
+                         dz, &
+                         im, lmk, lmp, &
+                         clouds, cldsa, mtopa, mbota, de_lgth)         !  ---  outputs
           endif
 
         endif                            ! end if_icmphys
@@ -1656,8 +1659,8 @@
 
         call diagcld1 (plyr, plvl, tlyr, rhly, vvel, Cldprop%cv,  &    !  ---  inputs
                        cvt1, cvb1, Grid%xlat, Grid%xlon,          &
-                       Sfcprop%slmsk, IM, LMK, LMP,               &
-                       clouds, cldsa, mtopa, mbota)                    !  ---  outputs
+                       Sfcprop%slmsk, dz, IM, LMK, LMP,           &
+                       clouds, cldsa, mtopa, mbota, de_lgth)           !  ---  outputs
 
       endif                                ! end_if_ntcw
 
@@ -1706,7 +1709,7 @@
           if (Model%swhtr) then
             call swrad (plyr, plvl, tlyr, tlvl, qlyr, olyr,     &      !  ---  inputs
                         gasvmr, clouds, Tbd%icsdsw, faersw,     &
-                        sfcalb, dz, delp, de_lgth,              & 
+                        sfcalb, dz, delp, de_lgth,              &
                         Radtend%coszen, Model%solcon,           &
                         nday, idxday, im, lmk, lmp, Model%lprnt,&
                         htswc, Diag%topfsw, Radtend%sfcfsw,     &      !  ---  outputs
@@ -1714,7 +1717,7 @@
           else
             call swrad (plyr, plvl, tlyr, tlvl, qlyr, olyr,     &      !  ---  inputs 
                         gasvmr, clouds, Tbd%icsdsw, faersw,     &
-                        sfcalb, dz, delp, de_lgth,              & 
+                        sfcalb, dz, delp, de_lgth,              &
                         Radtend%coszen, Model%solcon,           &
                         nday, idxday, IM, LMK, LMP, Model%lprnt,&
                         htswc, Diag%topfsw, Radtend%sfcfsw,     &      !  ---  outputs 
@@ -1812,13 +1815,15 @@
         if (Model%lwhtr) then
           call lwrad (plyr, plvl, tlyr, tlvl, qlyr, olyr, gasvmr,  &        !  ---  inputs
                       clouds, Tbd%icsdlw, faerlw, Radtend%semis,   &
-                      tsfg, im, lmk, lmp, Model%lprnt,             &
+                      tsfg, dz, delp, de_lgth,                     &
+                      im, lmk, lmp, Model%lprnt,                   &
                       htlwc, Diag%topflw, Radtend%sfcflw,          &        !  ---  outputs
                       hlw0=htlw0, tau110=tau110)                            !  ---  optional
         else
           call lwrad (plyr, plvl, tlyr, tlvl, qlyr, olyr, gasvmr,  &        !  ---  inputs
                       clouds, Tbd%icsdlw, faerlw, Radtend%semis,   &
-                      tsfg, IM, LMK, LMP, Model%lprnt,             &
+                      tsfg, dz, delp, de_lgth,                     &
+                      IM, LMK, LMP, Model%lprnt,                   &
                       htlwc, Diag%topflw, Radtend%sfcflw,          &
                       tau110=tau110)                                        !  ---  outputs
         endif
