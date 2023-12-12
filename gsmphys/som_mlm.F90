@@ -308,11 +308,14 @@
       endif
 
       if (use_qflux) then
+       write(*,*) "Using qflux"
        do i=1,im
          qsfc(i) = qsfc (i) + qflux_adj (i)
        enddo
       endif
 
+      ts_som_increment = 0.0
+ 
       do i = 1, im
 !
        if (mld_option == 'const') then
@@ -327,8 +330,6 @@
        endif
 
        fcor = 2 * omega * sin (Grid%xlat(i))
-       ts_som_increment = 0.0
-
        if ( islmsk(i) ==0 ) then
         if (ocean_option == "SOM") then
          mld(i)   =  mldc
@@ -365,8 +366,10 @@
           if (use_qflux) then
            tsfc1(i) = ts_som(i) + qsfc(i)/mlcp*dtp
            ts_som_increment(i) = qsfc(i)/mlcp*dtp
+           write(*,*) "SOM using qflux writing increment to diagnostic"
           else
            tsfc1(i) = (ts_som(i) + qsfc(i)/mlcp*dtp + tsfc2(i)/taut*dtp ) / alphat
+           write(*,*) "SOM not using qflux, not writing increment to diagnostic"
           endif
         case("MLM")
           tsfc1(i) = (tmlp + tsfc2(i)/taut*dtp)/alphat
