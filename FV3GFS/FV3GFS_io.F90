@@ -7006,6 +7006,30 @@ module FV3GFS_io_mod
 
     idx = idx + 1
     Diag(idx)%axes = 2
+    Diag(idx)%name = 'qflux'
+    Diag(idx)%desc = 'Prescribed ocean Q-flux'
+    Diag(idx)%unit = 'W/m**2'
+    Diag(idx)%mod_name = 'gfs_phys'
+    Diag(idx)%coarse_graining_method = AREA_WEIGHTED
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%qfluxadj(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
+    Diag(idx)%name = 'mldi'
+    Diag(idx)%desc = 'Instantaneous ocean mixed layer depth'
+    Diag(idx)%unit = 'm'
+    Diag(idx)%mod_name = 'gfs_phys'
+    Diag(idx)%coarse_graining_method = AREA_WEIGHTED
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%mld(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
     Diag(idx)%name = 'tclim_iano'
     Diag(idx)%desc = 'climatological SST plus initial anomaly'
     Diag(idx)%unit = 'degree C'
