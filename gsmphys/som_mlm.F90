@@ -179,7 +179,7 @@
       subroutine update_ocean                                                      &
        (im, dtp, Grid, islmsk, kdt, kdt_prev, netflxsfc, taux, tauy, rain, tair,   &
         qflux_restore, qflux_adj, mldclim, tsclim, ts_clim_iano, ts_obs, ts_som,   &
-        tsfc, tml, tml0, mld, mld0, huml, hvml, tmoml, tmoml0, iau_offset)  
+        tsfc, tml, tml0, mld, mld0, huml, hvml, tmoml, tmoml0, iau_offset, ts_som_increment)  
     
 !  ===================================================================  !
 !                                                                       !
@@ -205,7 +205,8 @@
            mldclim,       & ! ocean MLD
            tsclim,        & ! observed climatological SST
            ts_clim_iano,  & ! observed climatological SST plus initial anomaly
-           ts_obs           ! observed SST (for simulation)
+           ts_obs,        &  ! observed SST (for simulation)
+           ts_som_increment
 
 !  ---  inoutputs
       real (kind=kind_phys), dimension(:), intent(inout) ::   &
@@ -326,7 +327,8 @@
        endif
 
        fcor = 2 * omega * sin (Grid%xlat(i))
-
+       ts_som_increment = 0.0
+       
        if ( islmsk(i) ==0 ) then
         if (ocean_option == "SOM") then
          mld(i)   =  mldc
@@ -362,6 +364,7 @@
         case("SOM")
           if (use_qflux) then
            tsfc1(i) = ts_som(i) + qsfc(i)/mlcp*dtp
+           ts_som_increment(i) = qsfc(i)/mlcp*dtp
           else
            tsfc1(i) = (ts_som(i) + qsfc(i)/mlcp*dtp + tsfc2(i)/taut*dtp ) / alphat
           endif

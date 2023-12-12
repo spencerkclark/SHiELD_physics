@@ -1955,9 +1955,9 @@ module module_physics_driver
                            Sfcprop%tprcp, Statein%tgrs(:,1), qflux_restore, Sfcprop%qfluxadj,                     &
                            Sfcprop%mldclim, Sfcprop%tsclim,Sfcprop%ts_clim_iano, Statein%sst, Sfcprop%ts_som,     &
                            Sfcprop%tsfc, Sfcprop%tml, Sfcprop%tml0, Sfcprop%mld, Sfcprop%mld0,                    &
-                           Sfcprop%huml, Sfcprop%hvml, Sfcprop%tmoml, Sfcprop%tmoml0, Model%iau_offset)
+                           Sfcprop%huml, Sfcprop%hvml, Sfcprop%tmoml, Sfcprop%tmoml0, Model%iau_offset, Diag%ts_som_increment)
         endif
-         Diag%netflxsfc    (:) = Diag%netflxsfc(:) + netflxsfc(:)*dtf
+         Diag%netflxsfc    (:) = netflxsfc(:)
          Diag%qflux_restore(:) = Diag%qflux_restore(:) + qflux_restore(:)*dtf
          Diag%tclim_iano   (:) = Diag%tclim_iano(:) + Sfcprop%ts_clim_iano(:)*dtf
          Diag%MLD          (:) = Diag%MLD(:) + Sfcprop%mld(:)*dtf

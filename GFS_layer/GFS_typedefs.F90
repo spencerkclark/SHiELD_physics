@@ -1286,6 +1286,7 @@ module GFS_typedefs
 
 !
     real (kind=kind_phys), pointer :: netflxsfc     (:)    => null()   !net surface heat flux
+    real (kind=kind_phys), pointer :: ts_som_increment     (:)    => null()   !temperature increment for slab ocean model
     real (kind=kind_phys), pointer :: qflux_restore (:)    => null()   !restoring term for diagnosis only
     real (kind=kind_phys), pointer :: tclim_iano    (:)    => null()   !climatological SST with initial anomaly
     real (kind=kind_phys), pointer :: MLD           (:)    => null()   !ocean mixed layer depth
@@ -3803,6 +3804,7 @@ end subroutine overrides_create
     allocate (Diag%dlwsfc  (IM))
     allocate (Diag%dswsfc  (IM))
     allocate (Diag%netflxsfc     (IM))
+    allocate (Diag%ts_som_increment     (IM))
     allocate (Diag%qflux_restore (IM))
     allocate (Diag%MLD     (IM))
     allocate (Diag%tclim_iano    (IM))
@@ -4091,6 +4093,7 @@ end subroutine overrides_create
     Diag%dlwsfc  = zero
     Diag%dswsfc  = zero
     Diag%netflxsfc     = zero
+    Diag%ts_som_increment     = zero
     Diag%qflux_restore = zero
     Diag%MLD     = zero
     Diag%tclim_iano    = zero

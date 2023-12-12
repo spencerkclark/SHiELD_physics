@@ -7018,6 +7018,30 @@ module FV3GFS_io_mod
 
     idx = idx + 1
     Diag(idx)%axes = 2
+    Diag(idx)%name = 'ts_som'
+    Diag(idx)%desc = 'Slab ocean temperature'
+    Diag(idx)%unit = 'K'
+    Diag(idx)%mod_name = 'gfs_phys'
+    Diag(idx)%coarse_graining_method = AREA_WEIGHTED
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%ts_som(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
+    Diag(idx)%name = 'ts_som_increment'
+    Diag(idx)%desc = 'Slab ocean temperature increment'
+    Diag(idx)%unit = 'K'
+    Diag(idx)%mod_name = 'gfs_phys'
+    Diag(idx)%coarse_graining_method = AREA_WEIGHTED
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Gfs_diag(nb)%ts_som_increment(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
     Diag(idx)%name = 'mldi'
     Diag(idx)%desc = 'Instantaneous ocean mixed layer depth'
     Diag(idx)%unit = 'm'
