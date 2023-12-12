@@ -205,8 +205,7 @@
            mldclim,       & ! ocean MLD
            tsclim,        & ! observed climatological SST
            ts_clim_iano,  & ! observed climatological SST plus initial anomaly
-           ts_obs,        &  ! observed SST (for simulation)
-           ts_som_increment
+           ts_obs           ! observed SST (for simulation)
 
 !  ---  inoutputs
       real (kind=kind_phys), dimension(:), intent(inout) ::   &
@@ -219,7 +218,8 @@
            huml,          &
            hvml,          &
            tmoml,         &
-           tmoml0
+           tmoml0,        &
+           ts_som_increment
 
       real (kind=kind_phys), dimension(:), intent(out)   ::   &
            qflux_restore  ! restoring flux for diagnosis purpose
@@ -328,7 +328,7 @@
 
        fcor = 2 * omega * sin (Grid%xlat(i))
        ts_som_increment = 0.0
-       
+
        if ( islmsk(i) ==0 ) then
         if (ocean_option == "SOM") then
          mld(i)   =  mldc
