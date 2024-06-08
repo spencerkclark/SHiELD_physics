@@ -6912,6 +6912,50 @@ module FV3GFS_io_mod
 
     idx = idx + 1
     Diag(idx)%axes = 2
+    Diag(idx)%name = 'tsfc_pre'
+    Diag(idx)%desc = 'surface temperature [K]'
+    Diag(idx)%unit = 'K'
+    Diag(idx)%mod_name = 'gfs_sfc'
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%tsfc_pre(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
+    Diag(idx)%name = 'fice_pre'
+    Diag(idx)%desc = 'sea ice fraction'
+    Diag(idx)%unit = 'fraction'
+    Diag(idx)%mod_name = 'gfs_sfc'
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%fice_pre(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
+    Diag(idx)%name = 'hice_pre'
+    Diag(idx)%desc = 'sea ice height'
+    Diag(idx)%unit = 'm'
+    Diag(idx)%mod_name = 'gfs_sfc'
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%hice_pre(:)
+    enddo
+
+    idx = idx + 1
+    Diag(idx)%axes = 2
+    Diag(idx)%name = 'slmsk_pre'
+    Diag(idx)%desc = 'surface type'
+    Diag(idx)%unit = 'none'
+    Diag(idx)%mod_name = 'gfs_sfc'
+    allocate (Diag(idx)%data(nblks))
+    do nb = 1,nblks
+      Diag(idx)%data(nb)%var2 => Sfcprop(nb)%slmsk_pre(:)
+    enddo
+    
+    idx = idx + 1
+    Diag(idx)%axes = 2
     Diag(idx)%name = 'qsfc'
     Diag(idx)%desc = 'surface specific humidity [kg/kg]'
     Diag(idx)%unit = 'kg/kg'

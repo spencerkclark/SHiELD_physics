@@ -182,6 +182,11 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: tsfcl  (:)   => null()  !< surface temperature over ice fraction
     real (kind=kind_phys), pointer :: qsfc   (:)   => null()  !< surface specific humidity in kg/kg
 !
+    real (kind=kind_phys), pointer :: tsfc_pre   (:)   => null()  !< surface temperature in k
+    real (kind=kind_phys), pointer :: fice_pre   (:)   => null()  !< surface temperature in k
+    real (kind=kind_phys), pointer :: hice_pre   (:)   => null()  !< surface temperature in k
+    real (kind=kind_phys), pointer :: slmsk_pre   (:)   => null()  !< surface temperature in k
+    
     real (kind=kind_phys), pointer :: tsclim   (:)    => null()  !< climatological SST in k
     real (kind=kind_phys), pointer :: mldclim  (:)    => null()  !< climatological ocean mixed layer depth in m
     real (kind=kind_phys), pointer :: qfluxadj (:)    => null()  !< climatological qflux used for SOM
@@ -1521,6 +1526,12 @@ module GFS_typedefs
     allocate (Sfcprop%landfrac (IM))
     allocate (Sfcprop%lakefrac (IM))
     allocate (Sfcprop%tsfc   (IM))
+
+    allocate (Sfcprop%tsfc_pre   (IM))
+    allocate (Sfcprop%fice_pre   (IM))
+    allocate (Sfcprop%hice_pre   (IM))
+    allocate (Sfcprop%slmsk_pre   (IM))
+    
     allocate (Sfcprop%tsfco  (IM))
     allocate (Sfcprop%tsfcl  (IM))
     allocate (Sfcprop%qsfc   (IM))
@@ -1552,6 +1563,12 @@ module GFS_typedefs
     Sfcprop%landfrac  = clear_val
     Sfcprop%lakefrac  = clear_val
     Sfcprop%tsfc    = clear_val
+
+    Sfcprop%tsfc_pre    = clear_val
+    Sfcprop%fice_pre    = clear_val
+    Sfcprop%hice_pre    = clear_val
+    Sfcprop%slmsk_pre    = clear_val
+    
     Sfcprop%tsfco   = clear_val
     Sfcprop%tsfcl   = clear_val
     Sfcprop%qsfc    = clear_val

@@ -736,6 +736,11 @@ module module_physics_driver
 
       frain = dtf / dtp
 
+      Sfcprop%tsfc_pre = Sfcprop%tsfc
+      Sfcprop%fice_pre = Sfcprop%fice
+      Sfcprop%hice_pre = Sfcprop%hice
+      Sfcprop%slmsk_pre = Sfcprop%slmsk
+      
       do i= 1, im
         if (Model%use_ext_sst .and. Statein%ci(i) > -1. .and. Statein%ci(i) < 2.) then !Avoid bad values
            if (Statein%ci(i) >= 0.15 .and. nint(Sfcprop%slmsk(i)) == 0) then !create sea ice
