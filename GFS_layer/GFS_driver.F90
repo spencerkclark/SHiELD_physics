@@ -8,7 +8,9 @@ module GFS_driver
                                       GFS_tbd_type,     GFS_cldprop_type,  &
                                       GFS_radtend_type, GFS_diag_type,     &
                                       GFS_overrides_type
-  use module_radiation_driver,  only: GFS_radiation_driver, radupdate
+  use module_radiation_driver,  only: GFS_radiation_driver, radupdate,          &
+                                      initialize_co2_perturbation_random_state, &
+                                      compute_co2_perturbation_scale_factor
   use module_physics_driver,    only: GFS_physics_driver
   use module_radsw_parameters,  only: topfsw_type, sfcfsw_type
   use module_radlw_parameters,  only: topflw_type, sfcflw_type
@@ -272,6 +274,10 @@ module GFS_driver
     endif
 #endif
 
+  if (Model%co2_perturbation_period_seconds > 0) then
+     call initialize_co2_perturbation_random_state(Model)
+  endif
+
   end subroutine GFS_initialize
 
 
@@ -320,6 +326,7 @@ module GFS_driver
     Model%zhour = Model%phour
     Model%fhour = (sec + Model%dtp)/con_hr
     Model%kdt   = nint((sec + Model%dtp)/Model%dtp)
+    Model%segment_step = Model%segment_step + 1
 
     Model%ipt    = 1
     !Model%lprnt  = .false.
@@ -662,6 +669,10 @@ module GFS_driver
       endif
     endif
 
+    ! Update the CO2 perturbation scale factor if it is being used.
+    if (Model%co2_perturbation_period_seconds .gt. 0) then
+       call compute_co2_perturbation_scale_factor(Model)
+    endif
   end subroutine GFS_rad_time_vary
 
 

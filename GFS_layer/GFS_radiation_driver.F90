@@ -346,6 +346,8 @@
                                            GFS_cldprop_type,             &
                                            GFS_radtend_type,             &
                                            GFS_diag_type
+      use mersenne_twister,           only: random_stat, random_setseed, &
+                                            random_number
 !
       implicit   none
 !
@@ -396,7 +398,8 @@
 
 !  ---  publicly accessible module programs:
 
-      public radinit, radupdate, GFS_radiation_driver
+      public radinit, radupdate, GFS_radiation_driver, initialize_co2_perturbation_random_state, &
+             compute_co2_perturbation_scale_factor
 
 
 ! =================
@@ -1030,7 +1033,7 @@
 
       implicit none
 
-      type(GFS_control_type),         intent(in)    :: Model
+      type(GFS_control_type),         intent(inout) :: Model
       type(GFS_statein_type),         intent(in)    :: Statein
       type(GFS_stateout_type),        intent(inout) :: Stateout
       type(GFS_sfcprop_type),         intent(in)    :: Sfcprop
@@ -1378,6 +1381,10 @@
 
       call getgases (plvl, Grid%xlon, Grid%xlat, IM, LMK,  & !  ---  inputs
                      gasvmr)                                 !  ---  outputs
+
+      if (Model%co2_perturbation_period_seconds .gt. 0) then
+         call apply_random_co2_perturbation(IM, LMK, NF_VGAS, Model, gasvmr)
+      endif
 
       if (Model%ldiag3d) then
         Diag%co2 = gasvmr(:,:,1)  ! co2 volume mixing ratio
@@ -2186,6 +2193,80 @@
 
           enddo  ! diagnostic radiation calls
       end subroutine diagnostic_longwave_radiation_with_scaled_co2
+
+      subroutine get_seconds_since_initialization(Model, seconds_since_initialization)
+         type(GFS_control_type), intent(inout) :: Model
+         integer, intent(out) :: seconds_since_initialization
+
+         real(kind=kind_phys) :: rinc(5)
+
+         call w3difdat(Model%jdat, Model%idat, 4, rinc)
+         seconds_since_initialization = nint(rinc(4))
+      end subroutine get_seconds_since_initialization
+
+      subroutine initialize_co2_perturbation_random_state(Model)
+         ! Rather than write the random state out to disk and read it
+         ! in upon restarts, which would be cumbersome, we instead
+         ! roll the random number generator forward the appropriate
+         ! number of steps based on the initial seed upon restart.
+         type(GFS_control_type), intent(inout) :: Model
+
+         integer :: seconds_since_initialization, current_period
+         real(kind=kind_phys), allocatable :: harvest(:)
+
+         ! Compute the number seconds since the start of the run; this is independent
+         ! of model restarts.
+         call get_seconds_since_initialization(Model, seconds_since_initialization)
+
+         call random_setseed(Model%co2_perturbation_random_seed, Model%co2_perturbation_random_stat)
+
+         ! Compute the period iteration we are on; zero corresponds to the first period, i.e.
+         ! no spin-up needed.
+         current_period = seconds_since_initialization / Model%co2_perturbation_period_seconds
+         allocate(harvest(current_period))
+
+         ! Generate random numbers until the random number generator is spun up.
+         call random_number(harvest, Model%co2_perturbation_random_stat)
+      end subroutine initialize_co2_perturbation_random_state
+
+      subroutine compute_co2_perturbation_scale_factor(Model)
+         type(GFS_control_type), intent(inout) :: Model
+
+         integer :: seconds_since_initialization
+         type(random_stat) :: local_co2_perturbation_random_stat
+         real(kind=kind_phys) :: harvest(1)
+         real(kind=kind_phys) :: exponent, scale_factor, interval_scale
+
+         local_co2_perturbation_random_stat = Model%co2_perturbation_random_stat
+
+         ! Increment the random state if the integration time is divisible by the
+         ! CO2 perturbation period. Only do so if we are past the first timestep
+         ! after initialization; otherwise we would be incrementing twice.
+         call get_seconds_since_initialization(Model, seconds_since_initialization)
+
+         if ((mod(seconds_since_initialization, Model%co2_perturbation_period_seconds) .eq. 0) .and. (Model%segment_step .gt. 1)) then
+            call random_number(harvest, local_co2_perturbation_random_stat)
+            Model%co2_perturbation_random_stat = local_co2_perturbation_random_stat
+         endif
+
+         call random_number(harvest, local_co2_perturbation_random_stat)
+
+         ! Compute the scale factor based on the randomly generated number;
+         ! here the scale factor is given by 2^(sigma * n), where sigma is
+         ! the co2_perturbation_exponent_scale and n is the randomly
+         ! generated number.
+         interval_scale = Model%co2_perturbation_exponent_maximum - Model%co2_perturbation_exponent_minimum
+         exponent = interval_scale * harvest(1) + Model%co2_perturbation_exponent_minimum
+         Model%co2_perturbation_scale_factor = 2.0 ** exponent
+      end subroutine compute_co2_perturbation_scale_factor
+
+      subroutine apply_random_co2_perturbation(im, lmk, nf_vgas, Model, gasvmr)
+         integer, intent(in) :: im, lmk, nf_vgas
+         type(GFS_control_type), intent(inout) :: Model
+         real(kind=kind_phys), intent(inout) :: gasvmr(im,lmk,nf_vgas)
+
+         gasvmr(:,:,1) = Model%co2_perturbation_scale_factor * gasvmr(:,:,1)
+      end subroutine apply_random_co2_perturbation
 !
 !> @}
 !........................................!

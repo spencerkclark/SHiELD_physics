@@ -6,6 +6,7 @@ module GFS_typedefs
        use ozne_def,                 only: levozp, oz_coeff
        use h2o_def,                  only: levh2o, h2o_coeff
        use gfdl_cld_mp_mod,          only: rhow
+       use mersenne_twister,         only: random_stat
 
        implicit none
 
@@ -914,6 +915,20 @@ module GFS_typedefs
     real(kind=kind_phys) :: iaufhrs(7)      ! forecast hours associated with increment files
     logical :: iau_filter_increments, iau_drymassfixer
     logical :: override_surface_radiative_fluxes  ! Whether to use Overrides to override the surface radiative fluxes
+
+!--- randomly perturbed CO2
+    real(kind=kind_phys) :: co2_perturbation_exponent_minimum  !< minimum value from a uniform distribution we draw an exponent
+                                                                   !< "n" from to compute the random scale factor, 2^n, we use to perturb
+                                                                   !< the prescribed CO2 concentration (default -2).
+    real(kind=kind_phys) :: co2_perturbation_exponent_maximum  !< maximum value from a uniform distribution we draw an exponent
+                                                                   !< "n" from to compute the random scale factor, 2^n, we use to perturb
+                                                                   !< the prescribed CO2 concentration (default -2).
+    integer              :: co2_perturbation_period_seconds    !< length of time in seconds between between perturbations. If less than
+                                                               !< zero, no perturbations will be applied (default).
+    integer              :: co2_perturbation_random_seed       !< random seed for random number generator; must be non-zero.
+    type(random_stat)    :: co2_perturbation_random_stat       !< random state for number generator.
+    integer              :: segment_step                       !< step index in current segment.
+    real(kind=kind_phys) :: co2_perturbation_scale_factor      !< container to hold state of current CO2 scale factor.
 
     contains
       procedure :: init  => control_initialize
@@ -2562,6 +2577,18 @@ end subroutine overrides_create
 
     logical :: override_surface_radiative_fluxes = .false.
 
+!--- randomly perturbed CO2
+    real(kind=kind_phys) :: co2_perturbation_exponent_minimum = -2 !< minimum value from a uniform distribution we draw an exponent
+                                                                   !< "n" from to compute the random scale factor, 2^n, we use to perturb
+                                                                   !< the prescribed CO2 concentration (default -2).
+    real(kind=kind_phys) :: co2_perturbation_exponent_maximum = -2 !< maximum value from a uniform distribution we draw an exponent
+                                                                   !< "n" from to compute the random scale factor, 2^n, we use to perturb
+                                                                   !< the prescribed CO2 concentration (default -2).
+    integer              :: co2_perturbation_period_seconds = -1   !< length of time in seconds between between perturbations. If less than
+                                                                   !< zero, no perturbations will be applied (default).
+    integer              :: co2_perturbation_random_seed = 280     !< random seed for the random number generator used in computing the 
+                                                                   !< scale factors
+
     !--- END NAMELIST VARIABLES
 
     NAMELIST /gfs_physics_nml/                                                              &
@@ -2633,7 +2660,11 @@ end subroutine overrides_create
                                debug, pre_rad, do_ocean, use_ifs_ini_sst, use_ext_sst, lprnt, &
                           !--- aerosol scavenging factors ('name:value' string array)
                                fscav_aero,                                                  &
-                               override_surface_radiative_fluxes
+                               override_surface_radiative_fluxes,                           &
+                               co2_perturbation_exponent_minimum,                           &
+                               co2_perturbation_exponent_maximum,                           &
+                               co2_perturbation_period_seconds,                             &
+                               co2_perturbation_random_seed
 
     !--- other parameters
     integer :: nctp    =  0                !< number of cloud types in CS scheme
@@ -2987,6 +3018,12 @@ end subroutine overrides_create
     ! prescribed via the physics Overrides type.
     Model%override_surface_radiative_fluxes = override_surface_radiative_fluxes
 
+    !--- set parameter values for random CO2 perturbation scheme
+    Model%co2_perturbation_exponent_minimum = co2_perturbation_exponent_minimum
+    Model%co2_perturbation_exponent_maximum = co2_perturbation_exponent_maximum
+    Model%co2_perturbation_period_seconds = co2_perturbation_period_seconds
+    Model%co2_perturbation_random_seed = co2_perturbation_random_seed
+    Model%segment_step = 0
 
     !--- tracer handling
     Model%ntrac            = size(tracer_names)
